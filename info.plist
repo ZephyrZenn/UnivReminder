@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict>
-	<key>NSRemindersFullAccessUsageDescription</key>
-	<string>Synchronize data from canvas to apple reminder</string>
-	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Synchronize data from canvas to apple reminder</string>
-</dict>
+	<dict>
+		<key>NSRemindersFullAccessUsageDescription</key>
+		<string>Synchronize data from canvas to apple reminder</string>
+		<key>NSCalendarsFullAccessUsageDescription</key>
+		<string>Synchronize data from canvas to apple reminder</string>
+		<key>NSRemindersUsageDescription</key>
+		<string>We need access to your reminders to synchronize your Canvas todos.</string>
+	</dict>
 </plist>

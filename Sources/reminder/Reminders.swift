@@ -46,6 +46,17 @@ class ReminderManager {
     self.calendar = nil
   }
 
+  deinit {
+    do {
+
+      try store.commit()
+      print("All Reminders has been saved")
+    } catch {
+      print(error)
+      print("Failed to save reminders")
+    }
+  }
+
   func requestAccess() async throws {
     let granted: Bool
     if #available(macOS 14.0, *) {
@@ -121,7 +132,7 @@ class ReminderManager {
     do {
       reminder.priority = Int(EKReminderPriority.medium.rawValue)
       reminder.calendar = try getOrCreateCalendar()
-      try store.save(reminder, commit: true)
+      try store.save(reminder, commit: false)
     } catch {
       throw ReminderError.saveFailed
     }
