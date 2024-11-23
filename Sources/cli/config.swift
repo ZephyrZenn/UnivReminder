@@ -51,17 +51,7 @@ class ConfigManager {
   private var config: [String: String] = [:]
 
   private init() {
-    var path: URL
-    if #available(macOS 13.0, *) {
-      path = FileManager.default.homeDirectoryForCurrentUser.appending(
-        component: ".univreminder", directoryHint: URL.DirectoryHint.isDirectory
-      ).appending(component: "config.json", directoryHint: URL.DirectoryHint.notDirectory)
-    } else {
-      // Fallback on earlier versions
-      path = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(
-        ".univreminder"
-      ).appendingPathComponent("config.json")
-    }
+    let path = CLIConstant.CONFIG_PATH
     if FileManager.default.fileExists(atPath: path.path) {
       do {
 
@@ -71,11 +61,11 @@ class ConfigManager {
         print(error)
       }
     } else {
+      print("Didn't find config file. Try to initialize a new one")
       let parent = path.deletingLastPathComponent()
       if !FileManager.default.fileExists(atPath: parent.path) {
         try! FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
       }
-      print("Creating config file")
       try! "{}".write(to: path, atomically: true, encoding: String.Encoding.utf8)
     }
   }
@@ -85,19 +75,8 @@ class ConfigManager {
   }
 
   func save() {
-    var path: URL
-    if #available(macOS 13.0, *) {
-      path = FileManager.default.homeDirectoryForCurrentUser.appending(
-        component: ".univreminder", directoryHint: URL.DirectoryHint.isDirectory
-      ).appending(component: "config.json", directoryHint: URL.DirectoryHint.notDirectory)
-    } else {
-      // Fallback on earlier versions
-      path = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(
-        ".univreminder"
-      ).appendingPathComponent("config.json")
-    }
     let data = try! JSONEncoder().encode(config)
-    try! data.write(to: path)
+    try! data.write(to: CLIConstant.CONFIG_PATH)
   }
 
   func get(key: String) -> String? {

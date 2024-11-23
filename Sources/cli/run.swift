@@ -1,7 +1,6 @@
 /// Subcommand run for synchronizing Canvas todos to Reminders
 import ArgumentParser
 
-@available(macOS 10.15, macCatalyst 13, iOS 13, tvOS 13, watchOS 6, *)
 struct RunCommand: AsyncParsableCommand {
 
   static var configuration = CommandConfiguration(
@@ -20,7 +19,8 @@ struct RunCommand: AsyncParsableCommand {
   func run() async throws {
 
     let canvasManager = CanvasManager(
-      token: ConfigManager.shared.get(key: CLIConstant.TOKEN_KEY)!)
+      token: ConfigManager.shared.get(key: CLIConstant.TOKEN_KEY)!,
+      known_todo_ids_path: CLIConstant.KNOWN_TODO_IDS_PATH)
 
     let reminderManager = ReminderManager()
     do {
@@ -32,7 +32,7 @@ struct RunCommand: AsyncParsableCommand {
         print("No todo needs to be synced")
         return
       }
-      print("Preparing to create reminders")
+      print("Find \(todos.count) new reminders. Preparing to create reminders")
       for todo in todos {
         try await reminderManager.createReminder(newReminder: todo.toStruct())
       }
