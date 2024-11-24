@@ -70,10 +70,6 @@ class ConfigManager {
     }
   }
 
-  deinit {
-    save()
-  }
-
   func save() {
     let data = try! JSONEncoder().encode(config)
     try! data.write(to: CLIConstant.CONFIG_PATH)

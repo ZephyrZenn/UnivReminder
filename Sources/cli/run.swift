@@ -39,6 +39,7 @@ struct RunCommand: AsyncParsableCommand {
       // commit the changes to the store. This must be invoked at the end
       try reminderManager.commit()
       try canvasManager.save_known_todo_ids()
+      print("Done!")
     } catch {
       print(error)
     }
