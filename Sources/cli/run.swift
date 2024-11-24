@@ -34,8 +34,11 @@ struct RunCommand: AsyncParsableCommand {
       }
       print("Find \(todos.count) new reminders. Preparing to create reminders")
       for todo in todos {
-        try await reminderManager.createReminder(newReminder: todo.toStruct())
+        try await reminderManager.createReminder(newReminder: todo.toStruct(), commit: false)
       }
+      // commit the changes to the store. This must be invoked at the end
+      try reminderManager.commit()
+      try canvasManager.save_known_todo_ids()
     } catch {
       print(error)
     }

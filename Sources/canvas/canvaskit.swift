@@ -73,6 +73,7 @@ enum CanvasError: Error {
   case initError(Error)
   case errorResponse(statusCode: Int)
   case decodingError
+  case fileError(Error)
 }
 
 class CanvasManager {
@@ -91,16 +92,16 @@ class CanvasManager {
     self.init_flag = false
   }
 
-  /// write new todo ids to the file when program exits
-  // TODO: don't store known_todo_ids if save to apple reminders failed
-  deinit {
+  /// Save known_todo_ids to the file. This must be called before the program exits
+  /// - Throws: CanvasError.fileError
+  func save_known_todo_ids() throws {
     let text = self.known_todo_ids.map { id in
       String(id)
     }.joined(separator: ",")
     do {
       try text.write(to: self.known_todo_ids_path, atomically: true, encoding: .utf8)
     } catch {
-      print("failed to write known_todo_ids to file")
+      throw CanvasError.fileError(error)
     }
   }
 
@@ -112,6 +113,9 @@ class CanvasManager {
     do {
       if !FileManager.default.fileExists(atPath: parent.path) {
         try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+      }
+      if !FileManager.default.fileExists(atPath: self.known_todo_ids_path.path) {
+        return
       }
       let text = try String(contentsOf: known_todo_ids_path, encoding: .utf8)
       text.split(separator: ",").forEach { id in
@@ -131,6 +135,7 @@ class CanvasManager {
     let url_param =
       "\(CanvasConstants.TODO_URL)?start_date=\(startDate.ISO8601Format())&per_page=\(CanvasConstants.PER_PAGE)"
     let url = URL(string: url_param)!
+    print(url)
     var req = URLRequest(url: url)
     req.allHTTPHeaderFields = ["Authorization": self.token]
     req.httpMethod = "GET"
