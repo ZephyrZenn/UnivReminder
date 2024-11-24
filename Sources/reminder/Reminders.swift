@@ -58,8 +58,11 @@ class ReminderManager {
     }
   }
 
+  /// Get or create a calendar for reminders. Use lazy init to avoid unnecessary creation
+  /// - Throws: ReminderError
+  /// - Returns: The calendar
   func getOrCreateCalendar() throws -> EKCalendar {
-    // Lazy init
+    // Lazy init. CLI tool don't need concurrent access to the store
     if let cal = self.calendar {
       return cal
     }
@@ -96,7 +99,12 @@ class ReminderManager {
     return reminders.map { $0.toStruct() }
   }
 
-  func createReminder(newReminder: CreateReminderReq) async throws {
+  /// Create a new reminder in apple reminders
+  /// - Parameters:
+  ///   - newReminder: The reminder to be created
+  ///   - commit: Whether to commit the change to the store immediately
+  /// - Throws: ReminderError
+  func createReminder(newReminder: CreateReminderReq, commit: Bool) async throws {
     let reminder = EKReminder(eventStore: store)
     reminder.title = newReminder.title
     if let notes = newReminder.notes {
@@ -121,9 +129,13 @@ class ReminderManager {
     do {
       reminder.priority = Int(EKReminderPriority.medium.rawValue)
       reminder.calendar = try getOrCreateCalendar()
-      try store.save(reminder, commit: true)
+      try store.save(reminder, commit: commit)
     } catch {
       throw ReminderError.saveFailed
     }
+  }
+
+  func commit() throws {
+    try store.commit()
   }
 }

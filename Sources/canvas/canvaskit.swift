@@ -37,7 +37,7 @@ enum SubmissionsUnion: Codable {
       self = .submissionsClass(submission)
       return
     }
-    self = .bool(false)
+    throw CanvasError.decodingError
   }
 
   func encode(to encoder: Encoder) throws {
@@ -65,16 +65,15 @@ extension SubmissionsUnion: Equatable {
 }
 
 struct SubmissionRecord: Codable, Equatable {
-  let submitted, excused, graded: Bool
-  let postedAt: Date
-  let late, missing, needsGrading, hasFeedback: Bool
-  let redoRequest: Bool
+  let submitted, graded, missing, late: Bool
+
 }
 
 enum CanvasError: Error {
   case initError(Error)
   case errorResponse(statusCode: Int)
   case decodingError
+  case fileError(Error)
 }
 
 class CanvasManager {
@@ -82,48 +81,43 @@ class CanvasManager {
   let token: String
   // id of todos that are already known
   var known_todo_ids: [Int]
-  let known_todo_ids_path: String
+  let known_todo_ids_path: URL
   // a flag to indicate if the manager has got the known todo ids
   var init_flag: Bool
 
-  init(token: String, known_todo_ids_path: String = "known_todo_ids.txt") {
+  init(token: String, known_todo_ids_path: URL) {
     self.token = "Bearer \(token)"
     self.known_todo_ids_path = known_todo_ids_path
     self.known_todo_ids = []
     self.init_flag = false
   }
 
-  /// write new todo ids to the file when program exits
-  // TODO: don't store known_todo_ids if save to apple reminders failed
-  deinit {
+  /// Save known_todo_ids to the file. This must be called before the program exits
+  /// - Throws: CanvasError.fileError
+  func save_known_todo_ids() throws {
     let text = self.known_todo_ids.map { id in
       String(id)
     }.joined(separator: ",")
     do {
-      try text.write(toFile: self.known_todo_ids_path, atomically: true, encoding: .utf8)
+      try text.write(to: self.known_todo_ids_path, atomically: true, encoding: .utf8)
     } catch {
-      print("failed to write known_todo_ids to file")
+      throw CanvasError.fileError(error)
     }
   }
 
   /// Initialize known_todo_ids from the file. Lazy init
   /// - Throws: initError
   func init_known_todo_ids() async throws {
-    // check if the file exists
-    if !FileManager.default.fileExists(atPath: self.known_todo_ids_path) {
-      let t = FileManager.default.createFile(
-        atPath: self.known_todo_ids_path, contents: nil, attributes: nil)
-      if !t {
-        throw CanvasError.initError(
-          NSError(
-            domain: "CreateFileError", code: 1,
-            userInfo: ["msg": "failed to create known_todo_ids file"]))
-      }
-      init_flag = true
-      return
-    }
+    var parent = self.known_todo_ids_path
+    parent.deleteLastPathComponent()
     do {
-      let text = try String(contentsOfFile: self.known_todo_ids_path)
+      if !FileManager.default.fileExists(atPath: parent.path) {
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+      }
+      if !FileManager.default.fileExists(atPath: self.known_todo_ids_path.path) {
+        return
+      }
+      let text = try String(contentsOf: known_todo_ids_path, encoding: .utf8)
       text.split(separator: ",").forEach { id in
         self.known_todo_ids.append(Int(id)!)
       }
@@ -141,6 +135,7 @@ class CanvasManager {
     let url_param =
       "\(CanvasConstants.TODO_URL)?start_date=\(startDate.ISO8601Format())&per_page=\(CanvasConstants.PER_PAGE)"
     let url = URL(string: url_param)!
+    print(url)
     var req = URLRequest(url: url)
     req.allHTTPHeaderFields = ["Authorization": self.token]
     req.httpMethod = "GET"
