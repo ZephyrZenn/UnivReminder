@@ -1,6 +1,7 @@
 // Get ToDo list from Canvas
 
 import Foundation
+import Logging
 
 struct CanvasConstants {
   static let TODO_URL = "https://canvas.nus.edu.sg/api/v1/planner/items"
@@ -84,6 +85,7 @@ class CanvasManager {
   let known_todo_ids_path: URL
   // a flag to indicate if the manager has got the known todo ids
   var init_flag: Bool
+  var logger = Logger(label: "CanvasManager")
 
   init(token: String, known_todo_ids_path: URL) {
     self.token = "Bearer \(token)"
@@ -101,6 +103,7 @@ class CanvasManager {
     do {
       try text.write(to: self.known_todo_ids_path, atomically: true, encoding: .utf8)
     } catch {
+      logger.error("Failed to save known_todo_ids: \(error)")
       throw CanvasError.fileError(error)
     }
   }
@@ -123,6 +126,7 @@ class CanvasManager {
       }
       self.init_flag = true
     } catch {
+      logger.error("Failed to init known_todo_ids: \(error)")
       throw CanvasError.initError(error)
     }
   }
@@ -142,6 +146,7 @@ class CanvasManager {
     req.setValue("application/json", forHTTPHeaderField: "Content-Type")
     let (data, resp) = try await URLSession.shared.data(for: req)
     if let httpResponse = resp as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+      logger.error("Failed to get todos from Canvas: \(httpResponse.statusCode)")
       throw CanvasError.errorResponse(statusCode: httpResponse.statusCode)
     }
     let decoder = JSONDecoder()
@@ -154,7 +159,7 @@ class CanvasManager {
           && todo.submissions == .bool(false)
       }
     } catch {
-      print(error)
+      logger.error("Failed to decode todos from Canvas: \(error)")
       throw CanvasError.decodingError
     }
     // initialize known_todo_ids if not done

@@ -9,6 +9,7 @@ struct CLIConstant {
     ".univreminder")
   static let CONFIG_PATH = ROOT_DIR.appendingPathComponent("config.json")
   static let KNOWN_TODO_IDS_PATH = ROOT_DIR.appendingPathComponent("known_todo_ids")
+  static let LOG_PATH = ROOT_DIR.appendingPathComponent("univreminder.log")
 }
 
 enum CLIError: Error {

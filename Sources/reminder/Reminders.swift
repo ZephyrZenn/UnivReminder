@@ -1,6 +1,7 @@
 /// This file is used for managing apple reminders
 
 import EventKit
+import Logging
 
 enum ReminderError: Error {
   case accessDenied
@@ -40,6 +41,7 @@ class ReminderManager {
   let store = EKEventStore()
   let calendarName: String
   let calendar: EKCalendar?
+  var logger = Logger(label: "ReminderManager")
 
   init(calendarName: String = "UnivReminder") {
     self.calendarName = calendarName
@@ -54,6 +56,7 @@ class ReminderManager {
       granted = try await store.requestAccess(to: .reminder)
     }
     guard granted else {
+      logger.error("Access to reminders is denied")
       throw ReminderError.accessDenied
     }
   }
@@ -80,6 +83,7 @@ class ReminderManager {
       if let localSource = store.sources.first(where: { $0.sourceType == .local }) {
         newCalendar.source = localSource
       } else {
+        logger.error("Failed to find a source for the calendar")
         throw ReminderError.unknownSource
       }
     }
@@ -93,6 +97,7 @@ class ReminderManager {
       withDueDateStarting: nil, ending: nil, calendars: nil)
 
     guard let reminders = await store.fetchReminders(matching: predict_) else {
+      logger.error("Fetch reminders failed")
       throw ReminderError.noRemindersFound
     }
 
@@ -131,6 +136,7 @@ class ReminderManager {
       reminder.calendar = try getOrCreateCalendar()
       try store.save(reminder, commit: commit)
     } catch {
+      logger.error("Failed to save reminder: \(error)")
       throw ReminderError.saveFailed
     }
   }

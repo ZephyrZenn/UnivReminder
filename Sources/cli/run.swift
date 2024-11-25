@@ -1,5 +1,6 @@
 /// Subcommand run for synchronizing Canvas todos to Reminders
 import ArgumentParser
+import Logging
 
 struct RunCommand: AsyncParsableCommand {
 
@@ -17,6 +18,9 @@ struct RunCommand: AsyncParsableCommand {
   }
 
   func run() async throws {
+    LoggingSystem.bootstrap { label in
+      return FileLogHandler(logPath: CLIConstant.LOG_PATH)
+    }
 
     let canvasManager = CanvasManager(
       token: ConfigManager.shared.get(key: CLIConstant.TOKEN_KEY)!,
